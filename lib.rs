@@ -603,7 +603,10 @@ impl WindowsResource {
             ));
         }
 
-        let file_name = self.output_file.clone().unwrap_or("libresource.a".to_string());
+        let file_name = self
+            .output_file
+            .clone()
+            .unwrap_or("libresource.a".to_string());
         let libname = PathBuf::from(output_dir).join(file_name);
         let status = process::Command::new(&self.ar_path)
             .current_dir(&self.toolkit_path)
@@ -665,7 +668,10 @@ impl WindowsResource {
             rc_exe
         };
         println!("Selected RC path: '{}'", rc_exe.display());
-        let file_name = self.output_file.clone().unwrap_or("resource.lib".to_string());
+        let file_name = self
+            .output_file
+            .clone()
+            .unwrap_or("resource.lib".to_string());
         let output = PathBuf::from(output_dir).join(file_name);
         let input = PathBuf::from(input);
         let mut command = process::Command::new(&rc_exe);
