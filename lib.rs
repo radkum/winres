@@ -85,7 +85,7 @@ struct Icon {
 
 #[derive(Debug)]
 pub struct WindowsResource {
-    toolkit_path: PathBuf,
+    toolkit_path: Option<PathBuf>,
     properties: HashMap<String, String>,
     version_info: HashMap<VersionInfo, u64>,
     rc_file: Option<String>,
@@ -196,15 +196,19 @@ impl WindowsResource {
 
         let sdk = if cfg!(target_env = "msvc") {
             match get_sdk() {
-                Ok(mut v) => v.pop().unwrap(),
-                Err(_) => PathBuf::new(),
+                Ok(mut v) => Some(v.pop().unwrap()),
+                Err(_) => None,
             }
         } else if cfg!(windows) {
-            PathBuf::from("\\")
+            println!("windows elo ziomyyyy");
+            println!("{}", std::env::consts::OS);
+            Some(PathBuf::from("\\"))
         } else {
-            PathBuf::from("/")
+            println!("elo ziomyyyy");
+            println!("{}", std::env::consts::OS);
+            None
         };
-
+        println!("sdk: '{sdk:?}'");
         WindowsResource {
             toolkit_path: sdk,
             properties: props,
@@ -274,7 +278,7 @@ impl WindowsResource {
     /// If it is left unset, it will look up a path in the registry,
     /// i.e. `HKLM\SOFTWARE\Microsoft\Windows Kits\Installed Roots`
     pub fn set_toolkit_path<'a>(&mut self, path: &'a str) -> &mut Self {
-        self.toolkit_path = PathBuf::from(path);
+        self.toolkit_path = Some(PathBuf::from(path));
         self
     }
 
@@ -590,8 +594,9 @@ impl WindowsResource {
     fn compile_with_toolkit_gnu<'a>(&self, input: &'a str, output_dir: &'a str) -> io::Result<()> {
         let output = PathBuf::from(output_dir).join("resource.o");
         let input = PathBuf::from(input);
+        let toolkit_path = self.toolkit_path.clone().unwrap_or_default();
         let status = process::Command::new(&self.windres_path)
-            .current_dir(&self.toolkit_path)
+            .current_dir(&toolkit_path)
             .arg(format!("-I{}", env::var("CARGO_MANIFEST_DIR").unwrap()))
             .arg(format!("{}", input.display()))
             .arg(format!("{}", output.display()))
@@ -609,7 +614,7 @@ impl WindowsResource {
             .unwrap_or("libresource.a".to_string());
         let libname = PathBuf::from(output_dir).join(file_name);
         let status = process::Command::new(&self.ar_path)
-            .current_dir(&self.toolkit_path)
+            .current_dir(&toolkit_path)
             .arg("rsc")
             .arg(format!("{}", libname.display()))
             .arg(format!("{}", output.display()))
@@ -657,15 +662,18 @@ impl WindowsResource {
     }
 
     fn compile_with_toolkit_msvc<'a>(&self, input: &'a str, output_dir: &'a str) -> io::Result<()> {
-        let rc_exe = PathBuf::from(&self.toolkit_path).join("rc.exe");
-        let rc_exe = if !rc_exe.exists() {
-            if cfg!(target_arch = "x86_64") {
-                PathBuf::from(&self.toolkit_path).join(r"bin\x64\rc.exe")
-            } else {
-                PathBuf::from(&self.toolkit_path).join(r"bin\x86\rc.exe")
+        let rc_exe = if let Some(toolkit_path) = self.toolkit_path.clone() {
+            let mut rc_exe = PathBuf::from(&toolkit_path).join("rc.exe");
+            if !rc_exe.exists() {
+                if cfg!(target_arch = "x86_64") {
+                    rc_exe = PathBuf::from(&toolkit_path).join(r"bin\x64\rc.exe");
+                } else {
+                    rc_exe = PathBuf::from(&toolkit_path).join(r"bin\x86\rc.exe");
+                }
             }
-        } else {
             rc_exe
+        } else {
+            PathBuf::from("rc")
         };
         println!("Selected RC path: '{}'", rc_exe.display());
         let file_name = self
@@ -774,7 +782,7 @@ fn get_sdk() -> io::Result<Vec<PathBuf>> {
             "Can not find Windows SDK",
         ));
     }
-
+    println!("kits: '{kits:?}'");
     Ok(kits)
 }
 
