@@ -675,6 +675,7 @@ impl WindowsResource {
         } else {
             PathBuf::from("rc")
         };
+        println!("custom logggg: '{}'", rc_exe.display());
         println!("Selected RC path: '{}'", rc_exe.display());
         let file_name = self
             .output_file
