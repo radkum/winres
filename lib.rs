@@ -94,6 +94,7 @@ pub struct WindowsResource {
     manifest: Option<String>,
     manifest_file: Option<String>,
     output_directory: String,
+    output_file: Option<String>,
     windres_path: String,
     ar_path: String,
     add_toolkit_include: bool,
@@ -214,7 +215,7 @@ impl WindowsResource {
             manifest: None,
             manifest_file: None,
             output_directory: env::var("OUT_DIR").unwrap_or_else(|_| ".".to_string()),
-
+            output_file: None,
             #[cfg(windows)]
             windres_path: "windres.exe".to_string(),
             #[cfg(unix)]
@@ -531,6 +532,14 @@ impl WindowsResource {
         self
     }
 
+    /// Set a name of output file.
+    ///
+    /// Nothing else.
+    pub fn set_output_file<'a>(&mut self, file_name: &'a str) -> &mut Self {
+        self.output_file = Some(file_name.to_string());
+        self
+    }
+
     /// Append an additional snippet to the generated rc file.
     ///
     /// # Example
@@ -594,7 +603,8 @@ impl WindowsResource {
             ));
         }
 
-        let libname = PathBuf::from(output_dir).join("libresource.a");
+        let file_name = self.output_file.clone().unwrap_or("libresource.a".to_string());
+        let libname = PathBuf::from(output_dir).join(file_name);
         let status = process::Command::new(&self.ar_path)
             .current_dir(&self.toolkit_path)
             .arg("rsc")
@@ -607,9 +617,6 @@ impl WindowsResource {
                 "Could not create static library for resource file",
             ));
         }
-
-        println!("cargo:rustc-link-search=native={}", output_dir);
-        println!("cargo:rustc-link-lib=static=resource");
 
         Ok(())
     }
@@ -658,7 +665,8 @@ impl WindowsResource {
             rc_exe
         };
         println!("Selected RC path: '{}'", rc_exe.display());
-        let output = PathBuf::from(output_dir).join("resource.lib");
+        let file_name = self.output_file.clone().unwrap_or("resource.lib".to_string());
+        let output = PathBuf::from(output_dir).join(file_name);
         let input = PathBuf::from(input);
         let mut command = process::Command::new(&rc_exe);
         let command = command.arg(format!("/I{}", env::var("CARGO_MANIFEST_DIR").unwrap()));
@@ -690,8 +698,6 @@ impl WindowsResource {
             ));
         }
 
-        println!("cargo:rustc-link-search=native={}", output_dir);
-        println!("cargo:rustc-link-lib=dylib=resource");
         Ok(())
     }
 }
