@@ -200,15 +200,10 @@ impl WindowsResource {
                 Err(_) => None,
             }
         } else if cfg!(windows) {
-            println!("windows elo ziomyyyy");
-            println!("{}", std::env::consts::OS);
             Some(PathBuf::from("\\"))
         } else {
-            println!("elo ziomyyyy");
-            println!("{}", std::env::consts::OS);
             None
         };
-        println!("sdk: '{sdk:?}'");
         WindowsResource {
             toolkit_path: sdk,
             properties: props,
@@ -675,7 +670,7 @@ impl WindowsResource {
         } else {
             PathBuf::from("rc")
         };
-        println!("custom logggg: '{}'", rc_exe.display());
+
         println!("Selected RC path: '{}'", rc_exe.display());
         let file_name = self
             .output_file
@@ -758,7 +753,6 @@ fn get_sdk() -> io::Result<Vec<PathBuf>> {
             };
 
             if rc.exists() {
-                println!("{:?}", rc);
                 kits.push(rc.parent().unwrap().to_owned());
             }
 
@@ -770,7 +764,6 @@ fn get_sdk() -> io::Result<Vec<PathBuf>> {
                         e.path().join(r"x86\rc.exe")
                     };
                     if p.exists() {
-                        println!("{:?}", p);
                         kits.push(p.parent().unwrap().to_owned());
                     }
                 }
@@ -783,7 +776,6 @@ fn get_sdk() -> io::Result<Vec<PathBuf>> {
             "Can not find Windows SDK",
         ));
     }
-    println!("kits: '{kits:?}'");
     Ok(kits)
 }
 
@@ -798,7 +790,6 @@ fn parse_cargo_toml(props: &mut HashMap<String, String>) -> io::Result<()> {
                 if let Some(pkg) = pkg.get("winres") {
                     if let Some(pkg) = pkg.as_table() {
                         for (k, v) in pkg {
-                            // println!("{} {}", k ,v);
                             if let Some(v) = v.as_str() {
                                 props.insert(k.clone(), v.to_string());
                             } else {
